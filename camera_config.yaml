@@ -1,0 +1,31 @@
+# HammyCam Configuration
+# Edit these settings and restart to apply changes
+
+# Camera Settings
+camera:
+  # Resolution
+  width: 1280
+  height: 720
+  
+  # Frame rate (affects update speed)
+  fps: 30
+  
+  # Camera mode: "test_pattern" or "image"
+  mode: "test_pattern"
+  
+  # If mode is "image", specify the image path
+  image_path: "images/black.jpg"
+
+# Web Display Settings
+display:
+  # Port for web viewer
+  web_port: 8080
+
+# Auto-start Settings  
+autostart:
+  # Enable auto-start when container boots
+  enabled: true
+  
+  # Delay in seconds before starting
+  delay: 2
+

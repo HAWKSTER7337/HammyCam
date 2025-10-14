@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HammyCam - Simple Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            min-height: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #camera-frame {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .status.good {
+            color: #28a745;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .fps-display {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎥 HammyCam</h1>
+        <p class="subtitle">Live Camera Feed</p>
+
+        <div class="controls">
+            <label>Refresh Rate:
+                <select id="fps-select" onchange="changeFPS(this.value)">
+                    <option value="100">10 FPS</option>
+                    <option value="66">15 FPS</option>
+                    <option value="33" selected>30 FPS</option>
+                </select>
+            </label>
+            <button class="btn btn-primary" onclick="forceRefresh()">🔄 Refresh Now</button>
+        </div>
+
+        <div class="video-container">
+            <img id="camera-frame" src="current_frame.jpg" alt="Camera Feed">
+        </div>
+
+        <div class="status" id="status">Loading...</div>
+        <div class="fps-display" id="fps-display">FPS: --</div>
+    </div>
+
+    <script>
+        let refreshInterval = 33; // milliseconds (30 FPS)
+        let frameCount = 0;
+        let startTime = Date.now();
+        let intervalId;
+
+        function updateFrame() {
+            const img = document.getElementById('camera-frame');
+            const status = document.getElementById('status');
+            const fpsDisplay = document.getElementById('fps-display');
+
+            // Add timestamp to prevent caching
+            img.src = 'current_frame.jpg?t=' + Date.now();
+
+            img.onload = function () {
+                frameCount++;
+                const elapsed = (Date.now() - startTime) / 1000;
+                const fps = frameCount / elapsed;
+
+                status.textContent = '✓ Connected';
+                status.className = 'status good';
+                fpsDisplay.textContent = `FPS: ${fps.toFixed(1)} | Frames: ${frameCount}`;
+            };
+
+            img.onerror = function () {
+                status.textContent = '⚠️ Waiting for camera...';
+                status.className = 'status';
+            };
+        }
+
+        function changeFPS(ms) {
+            refreshInterval = parseInt(ms);
+            clearInterval(intervalId);
+            intervalId = setInterval(updateFrame, refreshInterval);
+            frameCount = 0;
+            startTime = Date.now();
+        }
+
+        function forceRefresh() {
+            updateFrame();
+        }
+
+        // Start updating
+        updateFrame();
+        intervalId = setInterval(updateFrame, refreshInterval);
+
+        console.log('HammyCam Simple Viewer started');
+    </script>
+</body>
+
+</html>
