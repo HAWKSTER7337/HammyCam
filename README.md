@@ -1,18 +1,22 @@
-# HammyCam - Web-Based Camera System
+# HammyCam - Web-Based Fake Camera System
 
-A Python-based camera system with auto-starting web viewer. View your camera feed in any web browser - **no installation required!**
+A Python-based fake camera system with web viewer. View your camera feed in any web browser - **no installation required!**
 
 ## 🚀 Quick Start
 
-The camera **auto-starts** when you open the container and is viewable in your browser!
+### 1. Start the Camera
 
-### Open in Browser
+```bash
+python3 scripts/start_camera.py
+```
+
+### 2. Open in Browser
 
 ```
 http://localhost:8080/
 ```
 
-That's it! The camera displays in your browser automatically. 🎥
+That's it! The fake camera displays in your browser. 🎥
 
 ---
 
@@ -90,7 +94,7 @@ HammyCam/
 ├── camera_config.yaml         # ⚙️  Configuration
 ├── requirements.txt           # 📦 Python dependencies
 ├── scripts/                   # 🔧 Core scripts
-│   ├── start_camera.py        #    🚀 Auto-start script
+│   ├── start_camera.py        #    🚀 Start fake camera
 │   ├── stop_camera.sh         #    🛑 Stop script
 │   └── simple_web_camera.sh   #    📹 Camera script
 ├── web/                       # 🌐 Web interface
@@ -100,6 +104,7 @@ HammyCam/
 │   ├── example_motion_detector.py
 │   └── process_image.py
 ├── images/                    # 📁 Sample images
+├── camera_analyzer.py         # 🔍 Frame analyzer (works with any camera!)
 └── README.md                  # 📄 This file
 ```
 
@@ -107,12 +112,12 @@ HammyCam/
 
 ## 🎯 Features
 
-- ✅ **Auto-start** - Camera starts when container boots
 - ✅ **Web-based** - View in any browser (desktop, mobile, tablet)
 - ✅ **No installation** - Just open the URL
 - ✅ **Configurable** - Edit YAML file to customize
 - ✅ **Network accessible** - View from any device
 - ✅ **Test pattern or custom image** - Your choice
+- ✅ **Easy to adapt** - Works with test patterns now, real cameras later
 
 ---
 
@@ -120,9 +125,44 @@ HammyCam/
 
 ### Default Setup (Test Pattern)
 ```bash
-# Just rebuild container - camera starts automatically!
+# Start the fake camera
+python3 scripts/start_camera.py
+
 # Open: http://localhost:8080/
 ```
+
+### Analyze Camera Frames
+
+The `camera_analyzer.py` script lets you analyze frames from any source:
+
+```bash
+# Analyze fake camera (reads from web/current_frame.jpg)
+# Auto-detects headless environment in containers!
+python3 camera_analyzer.py --source fake
+
+# Use real webcam (when you have one)
+python3 camera_analyzer.py --source webcam
+
+# Analyze video file
+python3 camera_analyzer.py --source video --path myvideo.mp4
+
+# Analyze static image
+python3 camera_analyzer.py --source image --path images/myimage.jpg
+
+# Process limited frames at different speed
+python3 camera_analyzer.py --source fake --max-frames 100 --fps 30
+
+# Save annotated frames automatically (works in headless mode!)
+python3 camera_analyzer.py --source fake --save-interval 30 --output-dir analysis_output
+```
+
+The analyzer detects:
+- 🎨 **Color analysis** - Dominant colors in frame
+- 💡 **Brightness levels** - Scene lighting
+- 🔍 **Edge detection** - Scene complexity
+- 👤 **Face detection** - Number of faces (if available)
+
+**Perfect for testing your detection logic before connecting a real camera!**
 
 ### Custom Image
 ```yaml
@@ -161,8 +201,8 @@ This project uses a Dev Container for consistent development.
 1. Open this folder in VS Code
 2. Click "Reopen in Container" when prompted
 3. Wait for container to build
-4. Camera starts automatically!
-5. Open `http://localhost:8080/` in your browser
+4. Run `python3 scripts/start_camera.py` to start the fake camera
+5. Open `http://localhost:8080/simple_web_viewer.html` in your browser
 
 ---
 
@@ -190,7 +230,7 @@ python3 scripts/start_camera.py
 ```
 
 ### Can't access from browser?
-1. Make sure you're using the correct URL: `http://localhost:8080/`
+1. Make sure you're using the correct URL: `http://localhost:8080/simple_web_viewer.html`
 2. Check if port 8080 is in use: `lsof -i :8080`
 3. Try a different port in `camera_config.yaml`
 
@@ -217,6 +257,7 @@ scripts/stop_camera.sh && python3 scripts/start_camera.py
 
 - **camera_config.yaml** - Configuration file with comments
 - **QUICKSTART.md** - Quick reference guide
+- **camera_analyzer.py** - Universal frame analyzer (fake or real cameras)
 - **examples/example_motion_detector.py** - Motion detection code example
 - **examples/process_image.py** - Image processing utilities
 
@@ -234,15 +275,15 @@ scripts/stop_camera.sh && python3 scripts/start_camera.py
 
 ## ✨ Summary
 
-**HammyCam is a simple, web-based camera system:**
+**HammyCam is a simple, web-based fake camera system:**
 
-1. ✅ Auto-starts on container boot
+1. ✅ Run script to start fake camera
 2. ✅ View in any web browser
 3. ✅ Works on desktop, mobile, tablet
 4. ✅ Configure via simple YAML file
-5. ✅ No installation or setup needed
+5. ✅ Easy to adapt for real cameras later
 
-**Just open `http://localhost:8080/` and enjoy!** 🎥
+**Run `python3 scripts/start_camera.py` then open `http://localhost:8080/simple_web_viewer.html` and enjoy!** 🎥
 
 ---
 

@@ -8,7 +8,7 @@ camera:
   height: 720
   
   # Frame rate (affects update speed)
-  fps: 30
+  fps: 1
   
   # Camera mode: "test_pattern" or "image"
   mode: "test_pattern"
@@ -23,7 +23,7 @@ display:
 
 # Auto-start Settings  
 autostart:
-  # Enable auto-start when container boots
+  # Enable auto-start when container boots (set to false for manual start)
   enabled: true
   
   # Delay in seconds before starting

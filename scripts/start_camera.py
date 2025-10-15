@@ -25,62 +25,121 @@ def load_config():
 
 
 def start_web_camera(config):
-    """Start the web camera"""
+    """Start the web camera with FFmpeg directly"""
     camera = config["camera"]
     display_config = config.get("display", {})
-    
+
     mode = camera["mode"]
     width = camera["width"]
     height = camera["height"]
     fps = camera["fps"]
     web_port = display_config.get("web_port", 8080)
-    
+
+    project_root = Path(__file__).parent.parent
+    web_dir = project_root / "web"
+    output_file = web_dir / "current_frame.jpg"
+
     print("=" * 60)
     print("  HammyCam Web Camera")
     print("=" * 60)
     print(f"Mode: {mode}")
     print(f"Resolution: {width}x{height} @ {fps}fps")
     print(f"Web Port: {web_port}")
+    print(f"Output: {output_file}")
     print("=" * 60)
 
-    # Build command
-    script_dir = Path(__file__).parent
-    if mode == "image":
-        image_path = camera.get("image_path", "images/black.jpg")
-        cmd = [
-            str(script_dir / "simple_web_camera.sh"),
-            str(script_dir.parent / image_path),
-            str(width),
-            str(height),
-            str(fps),
-            str(web_port),
-        ]
-    else:  # test_pattern
-        cmd = [
-            str(script_dir / "simple_web_camera.sh"),
-            "",  # Empty for test pattern
-            str(width),
-            str(height),
-            str(fps),
-            str(web_port),
-        ]
-
-    # Start in background
-    log_file = open("/tmp/hammycam_web.log", "w")
-    process = subprocess.Popen(
-        cmd, stdout=log_file, stderr=subprocess.STDOUT, cwd=script_dir.parent
+    # Start Python HTTP server
+    print("\n📡 Starting web server...")
+    webserver_log = open("/tmp/hammycam_webserver.log", "w")
+    webserver_process = subprocess.Popen(
+        ["python3", "-m", "http.server", str(web_port), "--bind", "0.0.0.0"],
+        stdout=webserver_log,
+        stderr=subprocess.STDOUT,
+        cwd=str(web_dir),
     )
 
-    print(f"✓ Web camera started (PID: {process.pid})")
-    print(f"  Logs: /tmp/hammycam_web.log")
-
-    # Save PID
-    pid_file = Path("/tmp/hammycam_web.pid")
-    pid_file.write_text(str(process.pid))
+    # Save web server PID
+    Path("/tmp/hammycam_webserver.pid").write_text(str(webserver_process.pid))
+    print(f"✓ Web server started (PID: {webserver_process.pid})")
 
     # Wait for server to start
-    time.sleep(3)
-    
+    time.sleep(1)
+
+    # Build FFmpeg command
+    print("\n📹 Starting FFmpeg camera...")
+
+    if mode == "image":
+        # Image mode
+        image_path = project_root / camera.get("image_path", "images/black.jpg")
+
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-re",  # Read at native frame rate
+            "-loop",
+            "1",  # Loop the image
+            "-framerate",
+            str(fps),
+            "-i",
+            str(image_path),
+            "-vf",
+            (
+                f"scale={width}:{height},"
+                "drawtext="
+                "fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:"
+                "text='HammyCam %{localtime\\:%X}':"
+                "fontcolor=white:fontsize=24:x=10:y=10:"
+                "box=1:boxcolor=black@0.5:boxborderw=5"
+            ),
+            "-q:v",
+            "3",  # Quality
+            "-y",  # Overwrite
+            "-update",
+            "1",  # Update same file
+            str(output_file),
+        ]
+    else:
+        # Test pattern mode
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-f",
+            "lavfi",
+            "-i",
+            f"color=c=blue:s={width}x{height}:r={fps}",
+            "-vf",
+            (
+                "drawtext="
+                "fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:"
+                "text='HammyCam':"
+                "fontcolor=white:fontsize=48:x=(w-text_w)/2:y=(h-text_h)/2-40:"
+                "box=1:boxcolor=black@0.5:boxborderw=5,"
+                "drawtext="
+                "fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:"
+                "text='%{localtime\\:%X}':"
+                "fontcolor=white:fontsize=36:x=(w-text_w)/2:y=(h-text_h)/2+40:"
+                "box=1:boxcolor=black@0.5:boxborderw=5"
+            ),
+            "-q:v",
+            "3",
+            "-y",
+            "-update",
+            "1",
+            str(output_file),
+        ]
+
+    # Start FFmpeg
+    ffmpeg_log = open("/tmp/hammycam_ffmpeg.log", "w")
+    ffmpeg_process = subprocess.Popen(
+        ffmpeg_cmd, stdout=ffmpeg_log, stderr=subprocess.STDOUT
+    )
+
+    # Save FFmpeg PID
+    Path("/tmp/hammycam_ffmpeg.pid").write_text(str(ffmpeg_process.pid))
+    print(f"✓ FFmpeg started (PID: {ffmpeg_process.pid})")
+    print(f"  Logs: /tmp/hammycam_ffmpeg.log")
+
+    # Wait for first frame
+    time.sleep(2)
+
     # Get container IP
     try:
         hostname = (
@@ -93,9 +152,7 @@ def start_web_camera(config):
         print(f"\n🌐 Open in your browser:")
         print(f"   http://localhost:{web_port}/simple_web_viewer.html")
 
-    return process.pid
-
-
+    return {"ffmpeg_pid": ffmpeg_process.pid, "webserver_pid": webserver_process.pid}
 
 
 def main():
@@ -118,12 +175,14 @@ def main():
         time.sleep(delay)
 
     # Start web camera
-    web_pid = start_web_camera(config)
+    pids = start_web_camera(config)
 
     print("\n" + "=" * 60)
     print("  HammyCam is running!")
     print("=" * 60)
-    print("\n💡 To stop: ./stop_camera.sh")
+    print(f"\n📹 FFmpeg PID: {pids['ffmpeg_pid']}")
+    print(f"📡 Web Server PID: {pids['webserver_pid']}")
+    print("\n💡 To stop: scripts/stop_camera.sh")
     print("\n")
 
 

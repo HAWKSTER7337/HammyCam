@@ -20,11 +20,22 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.organizeImports": "explicit"
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/usr/bin/zsh"
+          },
+          "bash": {
+            "path": "/bin/bash"
+          }
         }
       }
     }
   },
-  "forwardPorts": [8080],
+  "forwardPorts": [
+    8080
+  ],
   "postCreateCommand": "pip install --no-cache-dir -r requirements.txt",
   "postStartCommand": "python3 scripts/start_camera.py &",
   "remoteUser": "vscode",
