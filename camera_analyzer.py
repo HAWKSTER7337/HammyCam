@@ -44,6 +44,8 @@ class CameraAnalyzer:
         self.frame_count = 0
         self.start_time = time.time()
 
+        self.motion_threshold = 0.30 # 30%
+
         if display and not self.display:
             print("⚠️  No display available - running in headless mode")
             print("   (Use --no-display to suppress this warning)")
@@ -284,7 +286,9 @@ class CameraAnalyzer:
                         print("❌ Failed to read frame")
                         break
 
-                self.detect_motion(frame, last_frame)
+                motion_detected = self.was_motion_detected(frame, last_frame)
+                if motion_detected:
+                    print("Motion detected")
 
                 self.frame_count += 1
                 last_frame = frame
@@ -311,7 +315,7 @@ class CameraAnalyzer:
             self.cleanup()
             self.print_summary()
 
-    def detect_motion(self, frame, last_frame):
+    def was_motion_detected(self, frame, last_frame):
         """Detect motion in the frame"""
 
         gray1 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -325,7 +329,7 @@ class CameraAnalyzer:
         total_pixels = thresh.shape[0] * thresh.shape[1]
         change_percent = (changed_pixels / total_pixels) * 100
 
-        print(f"Change: {change_percent:.2f}%")
+        return change_percent >= self.motion_threshold
 
     def cleanup(self):
         """Clean up resources"""
