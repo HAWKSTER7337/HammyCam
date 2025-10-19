@@ -32,7 +32,7 @@ def read_frame(self):
             os.remove(tmp_path)
         return False, None
 
-class CameraAnalyzer:
+class CameraReader:
     """Camera analyzer using libcamera-still (Bookworm compatible)"""
 
     def __init__(self, display=True):
@@ -40,6 +40,10 @@ class CameraAnalyzer:
         self.frame_count = 0
         self.start_time = time.time()
         self.motion_threshold = 0.30  # percent difference threshold
+        self._reactions = []
+
+    def add_reaction(self, reaction):
+        self._reactions.append(reaction)
 
     def connect(self):
         """Test if libcamera works"""
@@ -109,7 +113,8 @@ class CameraAnalyzer:
                     continue
 
                 if last_frame is not None and self.was_motion_detected(frame, last_frame):
-                    print(f"🟠 Motion detected (frame {self.frame_count})")
+                    for reaction in self._reactions:
+                        reaction.run()
 
                 self.frame_count += 1
                 last_frame = frame
@@ -133,6 +138,23 @@ class CameraAnalyzer:
         avg_fps = self.frame_count / elapsed if elapsed > 0 else 0
         print(f"\n📊 Summary: {self.frame_count} frames in {elapsed:.1f}s ({avg_fps:.2f} FPS)")
 
+class CameraAnalyzerInterface:
+    def __init__(self):
+        pass
+
+    def run(self):
+        pass
+    
+
+class SendMessage(CameraAnalyzerInterface):
+    def __init__(self):
+        pass
+
+    def run(self):
+        print("***\nMotion detected\n***")
+
+
 if __name__ == "__main__":
-    analyzer = CameraAnalyzer(display=False)
-    analyzer.run(fps=1)
+    reader = CameraReader(display=False)
+    reader.add_reaction(SendMessage())
+    reader.run(fps=1)
